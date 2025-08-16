@@ -15,6 +15,7 @@
     <div v-else class="user-info">
       <h1>ようこそ！</h1>
       <div class="user-details">
+        <p><strong>表示名:</strong> {{ userProfile?.profile?.displayName || '設定中...' }}</p>
         <p><strong>メールアドレス:</strong> {{ user.email }}</p>
         <p><strong>ユーザーID:</strong> {{ user.uid }}</p>
       </div>
@@ -23,20 +24,52 @@
 
     <div class="navigation">
       <router-link to="/add-data" class="nav-link"> データを追加する </router-link>
+      <router-link to="/create-post" class="nav-link"> 投稿を作成 </router-link>
+      <router-link to="/posts" class="nav-link"> 投稿一覧 </router-link>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { auth } from '@/firebase'
+import { auth, db } from '@/firebase'
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
 const user = ref(null)
+const userProfile = ref(null)
 let unsubscribe = null
+
+// ユーザープロフィールを取得
+const fetchUserProfile = async (userId) => {
+  try {
+    const userRef = doc(db, 'users', userId)
+    const userDoc = await getDoc(userRef)
+
+    if (userDoc.exists()) {
+      userProfile.value = userDoc.data()
+    } else {
+      // ユーザーが存在しない場合、新しく作成
+      const newProfile = {
+        likedPosts: [],
+        profile: {
+          displayName:
+            auth.currentUser?.displayName || auth.currentUser?.email?.split('@')[0] || 'ユーザー',
+        },
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      }
+
+      await setDoc(userRef, newProfile)
+      userProfile.value = newProfile
+    }
+  } catch (error) {
+    console.error('プロフィール取得エラー:', error)
+  }
+}
 
 // ログイン処理
 const login = async () => {
@@ -57,6 +90,7 @@ const logout = async () => {
   try {
     await signOut(auth)
     console.log('ログアウト成功')
+    userProfile.value = null
   } catch (error) {
     console.error('ログアウトエラー:', error)
   }
@@ -64,8 +98,11 @@ const logout = async () => {
 
 // 認証状態の監視
 onMounted(() => {
-  unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+  unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
     user.value = currentUser
+    if (currentUser) {
+      await fetchUserProfile(currentUser.uid)
+    }
     console.log('認証状態変更:', currentUser ? 'ログイン済み' : '未ログイン')
   })
 })
@@ -143,6 +180,9 @@ h1 {
 .navigation {
   margin-top: 20px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .nav-link {
