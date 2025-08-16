@@ -1,49 +1,83 @@
 <template>
-  <div class="comment-section">
-    <h4>コメント ({{ comments.length }})</h4>
+  <div class="border-t border-gray-100 pt-4">
+    <h4 class="text-sm font-semibold text-gray-900 mb-4">コメント ({{ comments.length }})</h4>
 
     <!-- コメント入力フォーム -->
-    <div v-if="user" class="comment-form">
-      <textarea
-        v-model="newComment"
-        placeholder="コメントを入力..."
-        rows="3"
-        class="comment-input"
-      ></textarea>
-      <button
-        @click="addComment"
-        :disabled="!newComment.trim() || isSubmitting"
-        class="comment-submit-btn"
-      >
-        {{ isSubmitting ? '送信中...' : 'コメントを投稿' }}
-      </button>
+    <div v-if="user" class="mb-6">
+      <div class="flex space-x-3">
+        <div
+          class="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+        >
+          {{ user.email?.charAt(0).toUpperCase() || 'U' }}
+        </div>
+        <div class="flex-1">
+          <textarea
+            v-model="newComment"
+            placeholder="コメントを追加..."
+            rows="2"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-sm"
+          ></textarea>
+          <div class="flex justify-end mt-2">
+            <button
+              @click="addComment"
+              :disabled="!newComment.trim() || isSubmitting"
+              class="instagram-button instagram-button-primary text-sm px-4 py-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ isSubmitting ? '送信中...' : '投稿' }}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- ログインしていない場合のメッセージ -->
-    <div v-else class="login-message">
-      <p>コメントするにはログインが必要です</p>
+    <div v-else class="mb-6 p-4 bg-gray-50 rounded-lg text-center">
+      <p class="text-gray-500 text-sm">コメントするにはログインが必要です</p>
     </div>
 
     <!-- コメント一覧 -->
-    <div class="comments-list">
-      <div v-if="loading" class="loading">コメントを読み込み中...</div>
+    <div>
+      <div v-if="loading" class="text-center py-4">
+        <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500 mx-auto"></div>
+      </div>
 
-      <div v-else-if="comments.length === 0" class="no-comments">まだコメントがありません</div>
+      <div v-else-if="comments.length === 0" class="text-center py-4">
+        <p class="text-gray-400 text-sm">まだコメントがありません</p>
+      </div>
 
-      <div v-else class="comments">
-        <div v-for="comment in comments" :key="comment.id" class="comment-item">
-          <div class="comment-header">
-            <span class="comment-author">{{ getAuthorDisplayName(comment.authorId) }}</span>
-            <span class="comment-date">{{ formatDate(comment.createdAt) }}</span>
+      <div v-else class="space-y-4">
+        <div v-for="comment in comments" :key="comment.id" class="flex space-x-3">
+          <div
+            class="w-8 h-8 bg-gradient-to-r from-blue-400 to-green-400 rounded-full flex items-center justify-center text-white text-sm font-semibold"
+          >
+            {{ getAuthorDisplayName(comment.authorId).charAt(0).toUpperCase() }}
           </div>
 
-          <div class="comment-content">
-            {{ comment.content }}
-          </div>
+          <div class="flex-1">
+            <div class="bg-gray-50 rounded-2xl px-4 py-2">
+              <div class="flex items-center justify-between mb-1">
+                <span class="font-semibold text-sm text-gray-900">
+                  {{ getAuthorDisplayName(comment.authorId) }}
+                </span>
+                <span class="text-xs text-gray-500">
+                  {{ formatDate(comment.createdAt) }}
+                </span>
+              </div>
 
-          <!-- 自分のコメントの場合のみ削除ボタンを表示 -->
-          <div v-if="isOwnComment(comment)" class="comment-actions">
-            <button @click="deleteComment(comment.id)" class="delete-comment-btn">削除</button>
+              <p class="text-sm text-gray-700 leading-relaxed">
+                {{ comment.content }}
+              </p>
+            </div>
+
+            <!-- 自分のコメントの場合のみ削除ボタンを表示 -->
+            <div v-if="isOwnComment(comment)" class="mt-2 ml-4">
+              <button
+                @click="deleteComment(comment.id)"
+                class="text-xs text-red-500 hover:text-red-700 font-medium"
+              >
+                削除
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -52,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { db, auth } from '@/firebase'
 import {
   collection,
@@ -185,126 +219,3 @@ const formatDate = (timestamp) => {
   })
 }
 </script>
-
-<style scoped>
-.comment-section {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-}
-
-.comment-section h4 {
-  margin: 0 0 15px 0;
-  color: #333;
-  font-size: 18px;
-}
-
-.comment-form {
-  margin-bottom: 20px;
-}
-
-.comment-input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-  resize: vertical;
-  margin-bottom: 10px;
-}
-
-.comment-submit-btn {
-  background: #007bff;
-  color: white;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.comment-submit-btn:hover:not(:disabled) {
-  background: #0056b3;
-}
-
-.comment-submit-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.login-message {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-  background: #f8f9fa;
-  border-radius: 4px;
-  margin-bottom: 20px;
-}
-
-.comments-list {
-  margin-top: 15px;
-}
-
-.loading,
-.no-comments {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-}
-
-.comments {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.comment-item {
-  background: #f8f9fa;
-  padding: 15px;
-  border-radius: 8px;
-  border-left: 3px solid #007bff;
-}
-
-.comment-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.comment-author {
-  font-weight: bold;
-  color: #333;
-  font-size: 14px;
-}
-
-.comment-date {
-  color: #888;
-  font-size: 12px;
-}
-
-.comment-content {
-  color: #555;
-  line-height: 1.5;
-  margin-bottom: 10px;
-  white-space: pre-wrap;
-}
-
-.comment-actions {
-  text-align: right;
-}
-
-.delete-comment-btn {
-  background: #dc3545;
-  color: white;
-  padding: 4px 8px;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.delete-comment-btn:hover {
-  background: #c82333;
-}
-</style>

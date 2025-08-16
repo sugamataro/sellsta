@@ -1,104 +1,189 @@
 <template>
-  <div class="post-list">
-    <div class="header-section">
-      <h2>投稿一覧</h2>
-      <router-link to="/" class="mypage-btn">マイページ</router-link>
-    </div>
-
-    <!-- フィルター -->
-    <div class="filter-section">
-      <select v-model="selectedCategory" @change="filterPosts">
-        <option value="">すべてのカテゴリ</option>
-        <option value="general">一般</option>
-        <option value="tech">技術</option>
-        <option value="news">ニュース</option>
-        <option value="other">その他</option>
-      </select>
-    </div>
-
-    <!-- 投稿一覧 -->
-    <div v-if="loading" class="loading">読み込み中...</div>
-
-    <div v-else-if="filteredPosts.length === 0" class="no-posts">投稿がありません</div>
-
-    <div v-else class="posts">
-      <div v-for="post in filteredPosts" :key="post.id" class="post-card">
-        <div class="post-header">
-          <h3 class="post-title">{{ post.title }}</h3>
-          <span class="post-category">{{ getCategoryLabel(post.category) }}</span>
-        </div>
-
-        <div class="post-content">
-          {{ post.content }}
-        </div>
-
-        <div class="post-footer">
-          <span class="post-author">{{ getAuthorDisplayName(post.authorId) }}</span>
-          <span class="post-date">{{ formatDate(post.createdAt) }}</span>
-        </div>
-
-        <!-- いいねボタン -->
-        <div class="post-actions">
-          <div class="like-section">
-            <button
-              @click="toggleLike(post.id)"
-              :class="['like-btn', { liked: isLiked(post.id) }]"
-              :disabled="!user"
-            >
-              <span class="like-icon">❤️</span>
-              <span class="like-count">{{ post.likes || 0 }}</span>
-            </button>
-          </div>
-
-          <!-- 自分の投稿の場合のみ編集・削除ボタンを表示 -->
-          <div v-if="isOwnPost(post)" class="edit-delete-section">
-            <button @click="editPost(post)" class="edit-btn">編集</button>
-            <button @click="deletePost(post.id)" class="delete-btn">削除</button>
-          </div>
-        </div>
-
-        <!-- コメントセクション -->
-        <CommentSection :post-id="post.id" />
+  <div class="min-h-screen bg-gray-50">
+    <!-- ヘッダー -->
+    <div class="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <div class="max-w-2xl mx-auto px-4 py-3 flex justify-between items-center">
+        <h1 class="text-xl font-semibold text-gray-900">投稿一覧</h1>
+        <router-link to="/" class="instagram-button instagram-button-primary">
+          マイページ
+        </router-link>
       </div>
     </div>
 
-    <!-- エラーメッセージ -->
-    <div v-if="errorMessage" class="error-message">
-      {{ errorMessage }}
+    <!-- メインコンテンツ -->
+    <div class="max-w-2xl mx-auto px-4 py-6">
+      <!-- フィルター -->
+      <div class="mb-6">
+        <select
+          v-model="selectedCategory"
+          @change="filterPosts"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">すべてのカテゴリ</option>
+          <option value="general">一般</option>
+          <option value="tech">技術</option>
+          <option value="news">ニュース</option>
+          <option value="other">その他</option>
+        </select>
+      </div>
+
+      <!-- 投稿一覧 -->
+      <div v-if="loading" class="text-center py-12">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+        <p class="mt-2 text-gray-500">読み込み中...</p>
+      </div>
+
+      <div v-else-if="filteredPosts.length === 0" class="text-center py-12">
+        <div class="text-gray-400 text-6xl mb-4">📝</div>
+        <p class="text-gray-500 text-lg">投稿がありません</p>
+      </div>
+
+      <div v-else class="space-y-6">
+        <div v-for="post in filteredPosts" :key="post.id" class="instagram-card p-6">
+          <!-- 投稿ヘッダー -->
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-3">
+              <div
+                class="w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-semibold"
+              >
+                {{ getAuthorDisplayName(post.authorId).charAt(0) }}
+              </div>
+              <div>
+                <p class="font-semibold text-gray-900">{{ getAuthorDisplayName(post.authorId) }}</p>
+                <p class="text-sm text-gray-500">{{ formatDate(post.createdAt) }}</p>
+              </div>
+            </div>
+            <span class="px-3 py-1 bg-blue-500 text-white text-xs font-medium rounded-full">
+              {{ getCategoryLabel(post.category) }}
+            </span>
+          </div>
+
+          <!-- 投稿内容 -->
+          <div class="mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ post.title }}</h3>
+            <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ post.content }}</p>
+          </div>
+
+          <!-- アクションボタン -->
+          <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+            <div class="flex items-center space-x-4">
+              <!-- いいねボタン -->
+              <button
+                @click="toggleLike(post.id)"
+                :class="[
+                  'flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors duration-200',
+                  isLiked(post.id)
+                    ? 'text-instagram-red hover:bg-red-50'
+                    : 'text-gray-500 hover:bg-gray-50',
+                ]"
+                :disabled="!user"
+              >
+                <span class="text-xl">{{ isLiked(post.id) ? '❤️' : '🤍' }}</span>
+                <span class="font-medium">{{ post.likes || 0 }}</span>
+              </button>
+
+              <!-- コメント数 -->
+              <div class="flex items-center space-x-2 px-3 py-2 text-gray-500">
+                <span class="text-xl">💬</span>
+                <span class="font-medium">0</span>
+              </div>
+            </div>
+
+            <!-- 編集・削除ボタン -->
+            <div v-if="isOwnPost(post)" class="flex items-center space-x-2">
+              <button @click="editPost(post)" class="instagram-button instagram-button-secondary">
+                編集
+              </button>
+              <button
+                @click="deletePost(post.id)"
+                class="instagram-button bg-red-500 text-white hover:bg-red-600"
+              >
+                削除
+              </button>
+            </div>
+          </div>
+
+          <!-- コメントセクション -->
+          <CommentSection :post-id="post.id" />
+        </div>
+      </div>
+
+      <!-- エラーメッセージ -->
+      <div v-if="errorMessage" class="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <p class="text-red-600 text-center">{{ errorMessage }}</p>
+      </div>
     </div>
 
     <!-- 編集モーダル -->
-    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
-      <div class="modal-content" @click.stop>
-        <h3>投稿を編集</h3>
-        <form @submit.prevent="updatePost">
-          <div class="form-group">
-            <label for="edit-title">タイトル:</label>
-            <input type="text" id="edit-title" v-model="editingPost.title" required />
-          </div>
+    <div
+      v-if="showEditModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    >
+      <div class="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6">
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">投稿を編集</h3>
+          <form @submit.prevent="updatePost" class="space-y-4">
+            <div>
+              <label for="edit-title" class="block text-sm font-medium text-gray-700 mb-1"
+                >タイトル</label
+              >
+              <input
+                type="text"
+                id="edit-title"
+                v-model="editingPost.title"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
 
-          <div class="form-group">
-            <label for="edit-content">内容:</label>
-            <textarea id="edit-content" v-model="editingPost.content" rows="6" required></textarea>
-          </div>
+            <div>
+              <label for="edit-content" class="block text-sm font-medium text-gray-700 mb-1"
+                >内容</label
+              >
+              <textarea
+                id="edit-content"
+                v-model="editingPost.content"
+                rows="4"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              ></textarea>
+            </div>
 
-          <div class="form-group">
-            <label for="edit-category">カテゴリ:</label>
-            <select id="edit-category" v-model="editingPost.category" required>
-              <option value="general">一般</option>
-              <option value="tech">技術</option>
-              <option value="news">ニュース</option>
-              <option value="other">その他</option>
-            </select>
-          </div>
+            <div>
+              <label for="edit-category" class="block text-sm font-medium text-gray-700 mb-1"
+                >カテゴリ</label
+              >
+              <select
+                id="edit-category"
+                v-model="editingPost.category"
+                required
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="general">一般</option>
+                <option value="tech">技術</option>
+                <option value="news">ニュース</option>
+                <option value="other">その他</option>
+              </select>
+            </div>
 
-          <div class="modal-actions">
-            <button type="submit" :disabled="isUpdating" class="save-btn">
-              {{ isUpdating ? '更新中...' : '更新' }}
-            </button>
-            <button type="button" @click="closeEditModal" class="cancel-btn">キャンセル</button>
-          </div>
-        </form>
+            <div class="flex space-x-3 pt-4">
+              <button
+                type="submit"
+                :disabled="isUpdating"
+                class="flex-1 instagram-button instagram-button-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ isUpdating ? '更新中...' : '更新' }}
+              </button>
+              <button
+                type="button"
+                @click="closeEditModal"
+                class="flex-1 instagram-button instagram-button-secondary"
+              >
+                キャンセル
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
@@ -353,308 +438,3 @@ const deletePost = async (postId) => {
   }
 }
 </script>
-
-<style scoped>
-.post-list {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.header-section {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.header-section h2 {
-  margin: 0;
-  color: #333;
-  font-size: 24px;
-}
-
-.mypage-btn {
-  padding: 8px 16px;
-  background: #007bff;
-  color: white;
-  border-radius: 4px;
-  text-decoration: none;
-  font-size: 16px;
-  transition: background 0.3s;
-}
-
-.mypage-btn:hover {
-  background: #0056b3;
-}
-
-.filter-section {
-  margin-bottom: 20px;
-  text-align: center;
-}
-
-.filter-section select {
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-  background: white;
-}
-
-.loading,
-.no-posts {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-  font-size: 18px;
-}
-
-.posts {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.post-card {
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.3s;
-}
-
-.post-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.post-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.post-title {
-  margin: 0;
-  color: #333;
-  font-size: 20px;
-}
-
-.post-category {
-  background: #007bff;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: bold;
-}
-
-.post-content {
-  color: #555;
-  line-height: 1.6;
-  margin-bottom: 15px;
-  white-space: pre-wrap;
-}
-
-.post-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  color: #888;
-  border-top: 1px solid #eee;
-  padding-top: 15px;
-}
-
-.post-author {
-  font-weight: bold;
-}
-
-.post-actions {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
-}
-
-.like-section {
-  display: flex;
-  align-items: center;
-}
-
-.like-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 20px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 14px;
-}
-
-.like-btn:hover:not(:disabled) {
-  background: #f8f9fa;
-  border-color: #007bff;
-}
-
-.like-btn.liked {
-  background: #ff6b6b;
-  border-color: #ff6b6b;
-  color: white;
-}
-
-.like-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.like-icon {
-  font-size: 16px;
-}
-
-.like-count {
-  font-weight: bold;
-}
-
-.edit-delete-section {
-  display: flex;
-  gap: 10px;
-}
-
-.edit-btn,
-.delete-btn {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.3s;
-}
-
-.edit-btn {
-  background: #ffc107;
-  color: #333;
-}
-
-.edit-btn:hover {
-  background: #e0a800;
-}
-
-.delete-btn {
-  background: #dc3545;
-  color: white;
-}
-
-.delete-btn:hover {
-  background: #c82333;
-}
-
-/* モーダルスタイル */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  padding: 30px;
-  border-radius: 8px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.modal-content h3 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #333;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 16px;
-}
-
-.form-group textarea {
-  resize: vertical;
-}
-
-.modal-actions {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-  margin-top: 20px;
-}
-
-.save-btn,
-.cancel-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 16px;
-}
-
-.save-btn {
-  background: #28a745;
-  color: white;
-}
-
-.save-btn:hover:not(:disabled) {
-  background: #218838;
-}
-
-.save-btn:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.cancel-btn {
-  background: #6c757d;
-  color: white;
-}
-
-.cancel-btn:hover {
-  background: #5a6268;
-}
-
-.error-message {
-  color: #dc3545;
-  background: #f8d7da;
-  padding: 10px;
-  border-radius: 4px;
-  text-align: center;
-  margin-top: 20px;
-}
-</style>
