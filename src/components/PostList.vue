@@ -61,7 +61,27 @@
           <!-- 投稿内容 -->
           <div class="mb-4">
             <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ post.title }}</h3>
-            <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ post.content }}</p>
+
+            <!-- 画像表示 -->
+            <div v-if="post.image" class="mb-4">
+              <img
+                :src="post.image.url"
+                :alt="post.image.originalName || '投稿画像'"
+                class="post-image"
+                @error="handleImageError"
+                @load="handleImageLoad"
+              />
+              <div class="image-info">
+                <span class="image-type-badge" :class="getImageTypeBadgeClass(post.image.type)">
+                  {{ getImageTypeLabel(post.image.type) }}
+                </span>
+                <span class="image-size">{{ formatImageSize(post.image.size) }}</span>
+              </div>
+            </div>
+
+            <div class="post-content text-gray-700 leading-relaxed whitespace-pre-wrap">
+              {{ post.content }}
+            </div>
           </div>
 
           <!-- アクションボタン -->
@@ -437,4 +457,143 @@ const deletePost = async (postId) => {
     errorMessage.value = '投稿の削除に失敗しました'
   }
 }
+
+// 画像関連の関数
+const handleImageError = (event) => {
+  console.error('画像の読み込みに失敗:', event.target.src)
+  event.target.style.display = 'none'
+}
+
+const handleImageLoad = (event) => {
+  console.log('画像の読み込み完了:', event.target.src)
+}
+
+const getImageTypeLabel = (type) => {
+  return type === 'r2' ? 'R2' : 'Base64'
+}
+
+const getImageTypeBadgeClass = (type) => {
+  return type === 'r2' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+}
+
+const formatImageSize = (size) => {
+  if (!size) return ''
+
+  if (typeof size === 'string' && size.startsWith('data:')) {
+    // Base64の場合、文字列長から推定
+    const sizeInBytes = size.length * 0.75
+    return formatBytes(sizeInBytes)
+  } else {
+    // 数値の場合
+    return formatBytes(size)
+  }
+}
+
+const formatBytes = (bytes) => {
+  if (bytes === 0) return '0 B'
+
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
 </script>
+
+<style scoped>
+/* 画像表示用のスタイル */
+.post-image {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.post-image:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.image-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.image-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.image-size {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 640px) {
+  .post-image {
+    border-radius: 8px;
+  }
+
+  .image-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* 画像読み込み中のプレースホルダー */
+.post-image[src=''] {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 投稿内容のスタイル */
+.post-content {
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+/* 絵文字付きセクションのスタイル */
+.post-content p {
+  margin-bottom: 12px;
+}
+
+/* 絵文字で始まる行の強調 */
+.post-content:deep() {
+  /* 各セクションの間隔 */
+  white-space: pre-wrap;
+}
+
+/* モバイル対応 */
+@media (max-width: 640px) {
+  .post-content {
+    font-size: 0.9rem;
+  }
+}
+</style>

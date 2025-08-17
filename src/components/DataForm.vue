@@ -1,6 +1,12 @@
 <template>
   <div class="data-form">
-    <h2>データを追加</h2>
+    <!-- ヘッダー -->
+    <div class="form-header">
+      <h2>データを追加</h2>
+      <router-link to="/" class="instagram-button instagram-button-primary">
+        マイページ
+      </router-link>
+    </div>
     <form @submit.prevent="addData">
       <div class="form-group">
         <label for="name">名前:</label>
@@ -100,6 +106,20 @@ const addData = async () => {
   background: #f9f9f9;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.form-header h2 {
+  margin: 0;
+  color: #1f2937;
 }
 
 .form-group {
