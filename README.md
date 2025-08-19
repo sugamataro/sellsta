@@ -15,6 +15,10 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 ```sh
 npm install
 ```
+### Compile and Hot-Reload for Development（mobille）
+```sh
+npm run dev -- --host
+```
 
 ### Compile and Hot-Reload for Development
 
