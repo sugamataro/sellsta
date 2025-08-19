@@ -32,9 +32,12 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { auth, db } from '@/firebase'
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
+
+const router = useRouter()
 
 const email = ref('')
 const password = ref('')
@@ -102,6 +105,8 @@ onMounted(() => {
     user.value = currentUser
     if (currentUser) {
       await fetchUserProfile(currentUser.uid)
+      // ログイン済みの場合はホーム画面にリダイレクト
+      router.push('/home')
     }
     console.log('認証状態変更:', currentUser ? 'ログイン済み' : '未ログイン')
   })

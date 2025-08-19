@@ -1,10 +1,11 @@
 <script setup>
 import { app } from '@/firebase'
+import MainLayout from '@/layouts/MainLayout.vue'
 console.log('Firebase app:', app)
 </script>
 
 <template>
-  <router-view />
+  <MainLayout />
 </template>
 
 <style scoped></style>
